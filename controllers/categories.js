@@ -2,23 +2,17 @@ const { Category } = require('../models/category');
 const { HttpError, ctrlWrapper } = require('../helpers');
 
 const getAll = async (req, res) => {
-  const result = await Category.find({ deleted: false });
+  const { _id: owner } = req.user;
+
+  const result = await Category.find({ deleted: false, owner });
   res.json(result);
 };
 
-// const getAll = async (req, res) => {
-//   const { _id: owner } = req.user;
-//   const { page = 1, limit = 10 } = req.query;
-//   const skip = (page - 1) * limit;
-//   const result = await Book.find({ owner }, '-createdAt -updatedAt', {
-//     skip,
-//     limit,
-//   }).populate('owner', 'name email');
-//   res.json(result);
-// };
-
 const getById = async (req, res) => {
+  // const { _id: owner } = req.user;
   const { id } = req.params;
+
+  // const result = await Category.find({ _id: id, owner });
   const result = await Category.findById(id);
 
   if (!result) {
@@ -29,9 +23,9 @@ const getById = async (req, res) => {
 };
 
 const add = async (req, res) => {
-  // const { _id: owner } = req.user;
-  // const result = await Category.create({ ...req.body, owner });
-  const result = await Category.create(req.body);
+  const { _id: owner } = req.user;
+  const result = await Category.create({ ...req.body, owner });
+
   res.status(201).json(result);
 };
 

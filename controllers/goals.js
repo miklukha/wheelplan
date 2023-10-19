@@ -1,19 +1,11 @@
+const { Types } = require('mongoose');
 const { Goal } = require('../models/goal');
 const { HttpError, ctrlWrapper } = require('../helpers');
 
-// const getAll = async (req, res) => {
-//   const { _id: owner } = req.user;
-//   const { page = 1, limit = 10 } = req.query;
-//   const skip = (page - 1) * limit;
-//   const result = await Book.find({ owner }, '-createdAt -updatedAt', {
-//     skip,
-//     limit,
-//   }).populate('owner', 'name email');
-//   res.json(result);
-// };
-
 const getAll = async (req, res) => {
-  const result = await Goal.find({ deleted: false });
+  const { _id: owner } = req.user;
+
+  const result = await Goal.find({ deleted: false, owner });
   res.json(result);
 };
 
@@ -29,9 +21,15 @@ const getById = async (req, res) => {
 };
 
 const add = async (req, res) => {
-  // const { _id: owner } = req.user;
-  // const result = await Category.create({ ...req.body, owner });
-  const result = await Goal.create(req.body);
+  const { _id: owner } = req.user;
+  const categoryId = new Types.ObjectId(req.body.category);
+
+  const result = await Goal.create({
+    ...req.body,
+    owner,
+    category: categoryId,
+  });
+
   res.status(201).json(result);
 };
 
@@ -83,6 +81,13 @@ const updateProgress = async (req, res) => {
   res.json(result);
 };
 
+const getAllByCategory = async (req, res) => {
+  const { categoryId } = req.params;
+
+  const result = await Goal.find({ category: categoryId });
+  res.json(result);
+};
+
 module.exports = {
   getAll: ctrlWrapper(getAll),
   getById: ctrlWrapper(getById),
@@ -91,4 +96,5 @@ module.exports = {
   deleteById: ctrlWrapper(deleteById),
   updateStatus: ctrlWrapper(updateStatus),
   updateProgress: ctrlWrapper(updateProgress),
+  getAllByCategory: ctrlWrapper(getAllByCategory),
 };

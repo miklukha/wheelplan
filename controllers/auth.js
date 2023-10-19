@@ -1,162 +1,82 @@
-// const bcrypt = require('bcrypt');
-// const jwt = require('jsonwebtoken');
-// const gravatar = require('gravatar');
-// const path = require('path');
-// const fs = require('fs/promises');
-// const { nanoid } = require('nanoid');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-// const { User } = require('../models/user');
+const { User } = require('../models/user');
+const { HttpError, ctrlWrapper } = require('../helpers');
 
-// const { HttpError, ctrlWrapper, sendEmail } = require('../helpers');
+const { SECRET_KEY } = process.env;
 
-// const { SECRET_KEY, BASE_URL } = process.env;
+const register = async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
 
-// const avatarsDir = path.join(__dirname, '../', 'public', 'avatars');
+  if (user) {
+    throw HttpError(409, 'Email already in use');
+  }
 
-// const register = async (req, res) => {
-//   const { email, password } = req.body;
-//   const user = await User.findOne({ email });
+  const hashPassword = await bcrypt.hash(password, 10);
 
-//   if (user) {
-//     throw HttpError(409, 'Email already in use');
-//   }
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+  });
 
-//   const hashPassword = await bcrypt.hash(password, 10);
-//   const avatarURL = gravatar.url(email);
-//   const verificationCode = nanoid();
+  res.status(201).json({
+    email: newUser.email,
+    name: newUser.username,
+  });
+};
 
-//   const newUser = await User.create({
-//     ...req.body,
-//     password: hashPassword,
-//     avatarURL,
-//     verificationCode,
-//   });
+const login = async (req, res) => {
+  const { email, password } = req.body;
 
-//   const verifyEmail = {
-//     to: email,
-//     subject: 'Verify email',
-//     html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${verificationCode}">Click verify email</a>`,
-//   };
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpError(401, 'Email or password invalid');
+  }
 
-//   await sendEmail(verifyEmail);
+  const passwordCompare = await bcrypt.compare(password, user.password);
+  if (!passwordCompare) {
+    throw HttpError(401, 'Email or password invalid');
+  }
 
-//   res.status(201).json({
-//     email: newUser.email,
-//     name: newUser.name,
-//   });
-// };
+  const payload = {
+    id: user._id,
+  };
 
-// const verifyEmail = async (req, res) => {
-//   const { verificationCode } = req.params;
-//   const user = await User.findOne({ verificationCode });
-//   if (!user) {
-//     throw HttpError(401, 'Email not found');
-//   }
-//   await User.findByIdAndUpdate(user._id, {
-//     verify: true,
-//     verificationCode: '',
-//   });
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '7d' });
+  await User.findByIdAndUpdate(user._id, { token });
 
-//   res.json({
-//     message: 'Email verify success',
-//   });
-// };
+  res.json({
+    token,
+    user: {
+      name: user.username,
+      email: user.email,
+    },
+  });
+};
 
-// const resendVerifyEmail = async (req, res) => {
-//   const { email } = req.body;
-//   const user = await User.findOne({ email });
-//   if (!user) {
-//     throw HttpError(401, 'Email not found');
-//   }
-//   if (user.verify) {
-//     throw HttpError(401, 'Email already verify');
-//   }
+const getCurrent = async (req, res) => {
+  const { email, username } = req.user;
 
-//   const verifyEmail = {
-//     to: email,
-//     subject: 'Verify email',
-//     html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${user.verificationCode}">Click verify email</a>`,
-//   };
+  res.json({
+    email,
+    username,
+  });
+};
 
-//   await sendEmail(verifyEmail);
+const logout = async (req, res) => {
+  const { _id } = req.user;
+  await User.findByIdAndUpdate(_id, { token: '' });
 
-//   res.json({
-//     message: 'Verify email send success',
-//   });
-// };
+  res.json({
+    message: 'Logout success',
+  });
+};
 
-// const login = async (req, res) => {
-//   const { email, password } = req.body;
-//   const user = await User.findOne({ email });
-//   if (!user) {
-//     throw HttpError(401, 'Email or password invalid');
-//   }
-
-//   if (!user.verify) {
-//     throw HttpError(401, 'Email not verified');
-//   }
-
-//   const passwordCompare = await bcrypt.compare(password, user.password);
-//   if (!passwordCompare) {
-//     throw HttpError(401, 'Email or password invalid');
-//   }
-
-//   const payload = {
-//     id: user._id,
-//   };
-
-//   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '23h' });
-//   await User.findByIdAndUpdate(user._id, { token });
-
-//   res.json({
-//     token,
-//     user: {
-//       name: user.name,
-//       email: user.email,
-//     },
-//   });
-// };
-
-// const getCurrent = async (req, res) => {
-//   const { email, name } = req.user;
-
-//   res.json({
-//     email,
-//     name,
-//   });
-// };
-
-// const logout = async (req, res) => {
-//   const { _id } = req.user;
-//   await User.findByIdAndUpdate(_id, { token: '' });
-
-//   res.json({
-//     message: 'Logout success',
-//   });
-// };
-
-// const updateAvatar = async (req, res) => {
-//   const { _id } = req.user;
-//   // const {avatarURL: oldAvatarURL} = req.user;
-//   const { path: tempUpload, originalname } = req.file;
-//   const filename = `${_id}_${originalname}`;
-//   const resultUpload = path.join(avatarsDir, filename);
-//   await fs.rename(tempUpload, resultUpload);
-//   const avatarURL = path.join('avatars', filename);
-//   await User.findByIdAndUpdate(_id, { avatarURL });
-//   // await fs.unlink(oldAvatarURL)
-
-//   res.json({
-//     avatarURL,
-//   });
-// };
-
-// module.exports = {
-//   register: ctrlWrapper(register),
-//   verifyEmail: ctrlWrapper(verifyEmail),
-//   resendVerifyEmail: ctrlWrapper(resendVerifyEmail),
-//   login: ctrlWrapper(login),
-//   getCurrent: ctrlWrapper(getCurrent),
-//   logout: ctrlWrapper(logout),
-//   updateAvatar: ctrlWrapper(updateAvatar),
-// };
+module.exports = {
+  register: ctrlWrapper(register),
+  login: ctrlWrapper(login),
+  getCurrent: ctrlWrapper(getCurrent),
+  logout: ctrlWrapper(logout),
+};

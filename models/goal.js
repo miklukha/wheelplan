@@ -57,16 +57,16 @@ const goalSchema = new Schema(
       default: false,
     },
     subGoals: [subGoalSchema],
-    // category: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: 'category',
-    //   required: true,
-    // },
-    // owner: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: 'user',
-    //   required: true,
-    // },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'category',
+      required: true,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    },
   },
   { versionKey: false, timestamps: true },
 );
@@ -89,6 +89,7 @@ const addSchema = Joi.object({
   status: Joi.boolean().default(false),
   deleted: Joi.boolean().default(false),
   subGoals: Joi.array().items(addSubGoalSchema),
+  category: Joi.string().required(),
 });
 
 const updateProgressSchema = Joi.object({

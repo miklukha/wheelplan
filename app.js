@@ -3,7 +3,7 @@ const logger = require('morgan');
 const cors = require('cors');
 require('dotenv').config();
 
-// const authRouter = require('./routes/api/auth');
+const authRouter = require('./routes/api/auth');
 const categoriesRouter = require('./routes/api/categories');
 const goalsRouter = require('./routes/api/goals');
 
@@ -15,7 +15,7 @@ app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json()); // middleware that allows to process JSON data
 
-// app.use('/api/auth', authRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/goals', goalsRouter);
 
