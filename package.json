@@ -4,11 +4,13 @@
   "description": "Backend for the mobile app",
   "scripts": {
     "start": "cross-env NODE_ENV=production node server",
-    "dev": "cross-env NODE_ENV=development nodemon server"
+    "dev": "cross-env NODE_ENV=development nodemon server",
+    "test": "jest"
   },
   "author": "Anna Miklukha",
   "license": "ISC",
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.0.1"
   },
   "dependencies": {
