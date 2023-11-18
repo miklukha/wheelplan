@@ -23,7 +23,7 @@ const register = async (req, res) => {
 
   res.status(201).json({
     email: newUser.email,
-    name: newUser.username,
+    username: newUser.username,
   });
 };
 
@@ -50,7 +50,7 @@ const login = async (req, res) => {
   res.json({
     token,
     user: {
-      name: user.username,
+      username: user.username,
       email: user.email,
     },
   });
