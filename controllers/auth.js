@@ -6,6 +6,15 @@ const { HttpError, ctrlWrapper } = require('../helpers');
 
 const { SECRET_KEY } = process.env;
 
+const createToken = async user => {
+  const payload = {
+    id: user._id,
+  };
+
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '7d' });
+  return await User.findByIdAndUpdate(user._id, { token }, { new: true });
+};
+
 const register = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
@@ -21,10 +30,8 @@ const register = async (req, res) => {
     password: hashPassword,
   });
 
-  res.status(201).json({
-    email: newUser.email,
-    name: newUser.username,
-  });
+  const userData = await createToken(newUser);
+  res.status(201).json(userData);
 };
 
 const login = async (req, res) => {
@@ -40,29 +47,14 @@ const login = async (req, res) => {
     throw HttpError(401, 'Email or password invalid');
   }
 
-  const payload = {
-    id: user._id,
-  };
-
-  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '7d' });
-  await User.findByIdAndUpdate(user._id, { token });
-
-  res.json({
-    token,
-    user: {
-      name: user.username,
-      email: user.email,
-    },
-  });
+  const userData = await createToken(user);
+  res.json(userData);
 };
 
 const getCurrent = async (req, res) => {
-  const { email, username } = req.user;
+  // const { email, username, totalRanking } = req.user;
 
-  res.json({
-    email,
-    username,
-  });
+  res.json(req.user);
 };
 
 const logout = async (req, res) => {
