@@ -5,24 +5,6 @@ const { handleMongooseError } = require('../helpers');
 
 const dateRegexp = /^\d{2}-\d{2}-\d{4}$/;
 
-const subGoalSchema = new Schema({
-  title: {
-    type: String,
-    required: true,
-  },
-  progress: {
-    type: Number,
-  },
-  deadline: {
-    type: String,
-    match: dateRegexp,
-  },
-  habitStart: {
-    type: String,
-    match: dateRegexp,
-  },
-});
-
 const goalSchema = new Schema(
   {
     title: {
@@ -56,7 +38,6 @@ const goalSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    subGoals: [subGoalSchema],
     category: {
       type: Schema.Types.ObjectId,
       ref: 'category',
@@ -73,13 +54,6 @@ const goalSchema = new Schema(
 
 goalSchema.post('save', handleMongooseError);
 
-const addSubGoalSchema = Joi.object({
-  title: Joi.string().required(),
-  progress: Joi.number().integer(),
-  deadline: Joi.string().pattern(dateRegexp),
-  habitStart: Joi.string().pattern(dateRegexp),
-});
-
 const addSchema = Joi.object({
   title: Joi.string().required(),
   habitStart: Joi.string().pattern(dateRegexp),
@@ -88,7 +62,6 @@ const addSchema = Joi.object({
   value: Joi.number().integer().min(0).max(10).required(),
   status: Joi.boolean().default(false),
   deleted: Joi.boolean().default(false),
-  subGoals: Joi.array().items(addSubGoalSchema),
   category: Joi.string().required(),
 });
 
@@ -102,7 +75,6 @@ const updateStatusSchema = Joi.object({
 
 const schemas = {
   addSchema,
-  addSubGoalSchema,
   updateProgressSchema,
   updateStatusSchema,
 };
