@@ -84,7 +84,7 @@ const updateProgress = async (req, res) => {
 const getAllByCategory = async (req, res) => {
   const { categoryId } = req.params;
 
-  const result = await Goal.find({ category: categoryId });
+  const result = await Goal.find({ category: categoryId, deleted: false });
   res.json(result);
 };
 
