@@ -5,7 +5,7 @@ const { HttpError, ctrlWrapper } = require('../helpers');
 const getAll = async (req, res) => {
   const { _id: owner } = req.user;
 
-  const result = await Goal.find({ deleted: false, owner });
+  const result = await Goal.find({ deleted: false, owner }).sort( { "status": 1 } );
   res.json(result);
 };
 
