@@ -23,7 +23,7 @@ router.patch(
   authenticate,
   isValidId,
   validateBody(schemas.updateRatingSchema),
-  ctrl.deleteById,
+  ctrl.updateRating,
 );
 
 module.exports = router;
