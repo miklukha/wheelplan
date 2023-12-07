@@ -1,39 +1,3 @@
-/*
- * 1. Status is an integer
- * 2. Message is optional and a string
- * 3. Return an error the appropriate status and message
- *
- * (400) - error with status 400 and message 'Bad Request'
- * (400, 'Not valid id') - error with status 400 and message 'Not valid id'
- * (401) - error with status 401 and message 'Unauthorized'
- * (401, 'User is unauthorized') - error with status 401 and message 'User is unauthorized'
- * (403) - error with status 403 and message 'Forbidden'
- * (403, 'User is unauthorized') - error with status 403 and message 'Access is forbidden'
- * (404) - error with status 404 and message 'Not found'
- * (404, 'The page is not found') - error with status 404 and message 'The page is not found'
- * (409) - error with status 409 and message 'Conflict'
- * (409, 'A conflict arose') - error with status 409 and message 'A conflict arose'
- *
- * () - error in the function 'status must be exist'
- * (409.9) - error in the function 'status must be an integer'
- * ('409') - error in the function 'status must be a number'
- * (null) - error in the function 'status must be a number'
- * (false) - error in the function 'status must be a number'
- * (true) - error in the function 'status must be a number'
- * (() => {}) - error in the function 'status must be a number'
- * ({}) - error in the function 'status must be a number'
- * ([]) - error in the function 'status must be a number'
- *
- * (400, null) - error in the function 'message must be a string'
- * (400, 12) - error in the function 'message must be a string'
- * (400, false) - error in the function 'message must be a string'
- * (400, true) - error in the function 'message must be a string'
- * (400, () => {}) - error in the function 'message must be a string'
- * (400, {}) - error in the function 'message must be a string'
- * (400, []) - error in the function 'message must be a string'
- *
- */
-
 const HttpError = require('./HttpError');
 
 describe('test HttpError function', () => {
