@@ -7,7 +7,7 @@ const { schemas } = require('../../models/goal');
 const router = express.Router();
 
 router.get('/', authenticate, ctrl.getAll);
-router.get('/:id', authenticate, isValidId, ctrl.getById);
+// router.get('/:id', authenticate, isValidId, ctrl.getById);
 router.post('/', authenticate, validateBody(schemas.addSchema), ctrl.add);
 router.put(
   '/:id',
@@ -25,18 +25,18 @@ router.patch(
   validateBody(schemas.updateStatusSchema),
   ctrl.updateStatus,
 );
-router.patch(
-  '/:id/progress',
-  authenticate,
-  isValidId,
-  validateBody(schemas.updateProgressSchema),
-  ctrl.updateProgress,
-);
+// router.patch(
+//   '/:id/progress',
+//   authenticate,
+//   isValidId,
+//   validateBody(schemas.updateProgressSchema),
+//   ctrl.updateProgress,
+// );
 router.get(
   '/category/:categoryId',
   authenticate,
   isValidId,
   ctrl.getAllByCategory,
-);
+); 
 
 module.exports = router;

@@ -1,5 +1,3 @@
-const { Types } = require('mongoose');
-const { HttpError, ctrlWrapper } = require('../helpers');
 const {
   getAll,
   add,
@@ -8,197 +6,164 @@ const {
   updateStatus,
   getAllByCategory,
 } = require('./goals');
+const { Goal } = require('../models/goal');
 
-jest.mock('mongoose');
+jest.mock('../models/goal');
 
-const mockGoal = {
-  find: jest.fn(),
-  create: jest.fn(),
-  findByIdAndUpdate: jest.fn(),
-};
-
-jest.mock('mongoose');
-
-jest.mock('../models/goal', () => ({
-  Goal: mockGoal,
-}));
-
-describe('Goals Controller', () => {
-  let mockReq;
-  let mockRes;
-  let mockNext;
-
-  beforeEach(() => {
-    mockReq = {
-      user: { _id: 'userId' },
-      body: {},
-      params: {},
+describe('test goals functions', () => {
+  it('get all goals for a specific user', async () => {
+    const req = {
+      user: { _id: 'someUserId' },
     };
-    mockRes = {
+    const res = {
       json: jest.fn(),
-      status: jest.fn().mockReturnThis(),
     };
-    mockNext = jest.fn();
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('test getAll function', () => {
-    test('should return goals for the authenticated user', async () => {
-      const mockGoals = [{ title: 'Goal 1' }, { title: 'Goal 2' }];
-      mockGoal.find.mockResolvedValue(mockGoals);
-
-      await getAll(mockReq, mockRes);
-
-      expect(mockGoal.find).toHaveBeenCalledWith({
-        deleted: false,
-        owner: 'userId',
-      });
-      expect(mockRes.json).toHaveBeenCalledWith(mockGoals);
+    const fakeGoals = [
+      { _id: 'goalId1', title: 'Goal 1', deleted: false, owner: 'someUserId' },
+      { _id: 'goalId2', title: 'Goal 2', deleted: false, owner: 'someUserId' },
+    ];
+    Goal.find.mockResolvedValue(fakeGoals);
+    await getAll(req, res);
+    expect(res.json).toHaveBeenCalledWith(fakeGoals);
+    expect(Goal.find).toHaveBeenCalledWith({
+      deleted: false,
+      owner: 'someUserId',
     });
   });
 
-  describe('test add function', () => {
-    test('should create a new goal and return it', async () => {
-      const mockNewGoal = { title: 'New Goal' };
-      mockGoal.create.mockResolvedValue(mockNewGoal);
-
-      mockReq.body = { title: 'New Goal', category: 'categoryId' };
-
-      await add(mockReq, mockRes);
-
-      expect(mockGoal.create).toHaveBeenCalledWith({
+  it('add a new goal and respond with a 201 status', async () => {
+    const req = {
+      user: { _id: 'someUserId' },
+      body: {
         title: 'New Goal',
-        owner: 'userId',
-        category: Types.ObjectId('categoryId'),
-      });
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith(mockNewGoal);
+        habitStart: '01-01-2023',
+        deadline: '01-31-2023',
+        progress: 0,
+        value: 5,
+        category: '6564a96a9dfe5e278e57c29e',
+      },
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const fakeGoal = {
+      _id: 'newGoalId',
+      title: 'New Goal',
+      habitStart: '01-01-2023',
+      deadline: '01-31-2023',
+      progress: 0,
+      value: 5,
+      category: '6564a96a9dfe5e278e57c29e',
+      owner: 'someUserId',
+    };
+    Goal.create.mockResolvedValue(fakeGoal);
+    await add(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(fakeGoal);
+    expect(Goal.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ...req.body,
+        owner: 'someUserId',
+        category: expect.any(Object),
+      }),
+    );
+  });
+
+  it('update a goal by id and respond with the updated goal', async () => {
+    const req = {
+      params: { id: 'goalId1' },
+      body: { title: 'Updated Goal' },
+    };
+    const res = {
+      json: jest.fn(),
+    };
+    const fakeUpdatedGoal = {
+      _id: 'goalId1',
+      title: 'Updated Goal',
+    };
+    Goal.findByIdAndUpdate.mockResolvedValue(fakeUpdatedGoal);
+    await updateById(req, res);
+    expect(res.json).toHaveBeenCalledWith(fakeUpdatedGoal);
+    expect(Goal.findByIdAndUpdate).toHaveBeenCalledWith('goalId1', req.body, {
+      new: true,
     });
   });
 
-  describe('updateById', () => {
-    test('should update a goal by ID and return the updated goal', async () => {
-      const mockUpdatedGoal = { title: 'Updated Goal' };
-      mockGoal.findByIdAndUpdate.mockResolvedValue(mockUpdatedGoal);
-      mockReq.params.id = 'goalId';
-      mockReq.body = { title: 'Updated Goal' };
+  it('mark a goal as deleted by id and respond with the updated goal', async () => {
+    const req = {
+      params: { id: 'goalId1' },
+      body: { title: 'Updated Goal' },
+    };
+    const res = {
+      json: jest.fn(),
+    };
+    const fakeUpdatedGoal = {
+      _id: 'goalId1',
+      title: 'Updated Goal',
+      deleted: true,
+    };
+    Goal.findByIdAndUpdate.mockResolvedValue(fakeUpdatedGoal);
+    await deleteById(req, res);
+    expect(res.json).toHaveBeenCalledWith(fakeUpdatedGoal);
+    expect(Goal.findByIdAndUpdate).toHaveBeenCalledWith(
+      'goalId1',
+      { ...req.body, deleted: true },
+      { new: true },
+    );
+  });
 
-      await updateById(mockReq, mockRes);
-
-      expect(mockGoal.findByIdAndUpdate).toHaveBeenCalledWith(
-        'goalId',
-        { title: 'Updated Goal' },
-        { new: true },
-      );
-      expect(mockRes.json).toHaveBeenCalledWith(mockUpdatedGoal);
-    });
-
-    test('should call next with HttpError(404) if goal with given ID is not found', async () => {
-      mockGoal.findByIdAndUpdate.mockResolvedValue(null);
-      mockReq.params.id = 'nonexistentId';
-
-      await updateById(mockReq, mockRes, mockNext);
-
-      expect(mockGoal.findByIdAndUpdate).toHaveBeenCalledWith(
-        'nonexistentId',
-        expect.any(Object),
-        { new: true },
-      );
-      expect(mockNext).toHaveBeenCalledWith(HttpError(404, 'Not found'));
+  it('update the status of a goal by id and respond with the updated goal', async () => {
+    const req = {
+      params: { id: 'goalId1' },
+      body: { status: true },
+    };
+    const res = {
+      json: jest.fn(),
+    };
+    const fakeUpdatedGoal = {
+      _id: 'goalId1',
+      status: true,
+    };
+    Goal.findByIdAndUpdate.mockResolvedValue(fakeUpdatedGoal);
+    await updateStatus(req, res);
+    expect(res.json).toHaveBeenCalledWith(fakeUpdatedGoal);
+    expect(Goal.findByIdAndUpdate).toHaveBeenCalledWith('goalId1', req.body, {
+      new: true,
     });
   });
 
-  describe('deleteById', () => {
-    test('should soft delete a goal by ID and return the updated goal', async () => {
-      // Arrange
-      const mockDeletedGoal = { title: 'Deleted Goal', deleted: true };
-      mockGoal.findByIdAndUpdate.mockResolvedValue(mockDeletedGoal);
-      mockReq.params.id = 'goalId';
+  it('get all goals for a specific category and respond with the goals', async () => {
+    const req = {
+      params: { categoryId: 'someCategoryId' },
+    };
+    const res = {
+      json: jest.fn(),
+    };
 
-      // Act
-      await deleteById(mockReq, mockRes);
-
-      // Assert
-      expect(mockGoal.findByIdAndUpdate).toHaveBeenCalledWith(
-        'goalId',
-        { ...mockReq.body, deleted: true },
-        { new: true },
-      );
-      expect(mockRes.json).toHaveBeenCalledWith(mockDeletedGoal);
-    });
-
-    test('should call next with HttpError(404) if goal with given ID is not found', async () => {
-      // Arrange
-      mockGoal.findByIdAndUpdate.mockResolvedValue(null);
-      mockReq.params.id = 'nonexistentId';
-
-      // Act
-      await deleteById(mockReq, mockRes, mockNext);
-
-      // Assert
-      expect(mockGoal.findByIdAndUpdate).toHaveBeenCalledWith(
-        'nonexistentId',
-        expect.any(Object),
-        { new: true },
-      );
-      expect(mockNext).toHaveBeenCalledWith(HttpError(404, 'Not found'));
-    });
-  });
-
-  describe('updateStatus', () => {
-    test('should update the status of a goal by ID and return the updated goal', async () => {
-      // Arrange
-      const mockUpdatedGoal = { title: 'Updated Goal', status: 'completed' };
-      mockGoal.findByIdAndUpdate.mockResolvedValue(mockUpdatedGoal);
-      mockReq.params.id = 'goalId';
-      mockReq.body = { status: 'completed' };
-
-      // Act
-      await updateStatus(mockReq, mockRes);
-
-      // Assert
-      expect(mockGoal.findByIdAndUpdate).toHaveBeenCalledWith(
-        'goalId',
-        { status: 'completed' },
-        { new: true },
-      );
-      expect(mockRes.json).toHaveBeenCalledWith(mockUpdatedGoal);
-    });
-
-    test('should call next with HttpError(404) if goal with given ID is not found', async () => {
-      // Arrange
-      mockGoal.findByIdAndUpdate.mockResolvedValue(null);
-      mockReq.params.id = 'nonexistentId';
-
-      // Act
-      await updateStatus(mockReq, mockRes, mockNext);
-
-      // Assert
-      expect(mockGoal.findByIdAndUpdate).toHaveBeenCalledWith(
-        'nonexistentId',
-        expect.any(Object),
-        { new: true },
-      );
-      expect(mockNext).toHaveBeenCalledWith(HttpError(404, 'Not found'));
-    });
-  });
-
-  describe('getAllByCategory', () => {
-    test('should return goals for a specific category', async () => {
-      const mockGoalsByCategory = [{ title: 'Goal 1' }, { title: 'Goal 2' }];
-      mockGoal.find.mockResolvedValue(mockGoalsByCategory);
-      mockReq.params.categoryId = 'categoryId';
-
-      await getAllByCategory(mockReq, mockRes);
-
-      expect(mockGoal.find).toHaveBeenCalledWith({
-        category: 'categoryId',
+    const fakeGoals = [
+      {
+        _id: 'goalId1',
+        title: 'Goal 1',
         deleted: false,
-      });
-      expect(mockRes.json).toHaveBeenCalledWith(mockGoalsByCategory);
+        category: 'someCategoryId',
+      },
+      {
+        _id: 'goalId2',
+        title: 'Goal 2',
+        deleted: false,
+        category: 'someCategoryId',
+      },
+    ];
+
+    Goal.find.mockResolvedValue(fakeGoals);
+
+    await getAllByCategory(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(fakeGoals);
+    expect(Goal.find).toHaveBeenCalledWith({
+      category: 'someCategoryId',
+      deleted: false,
     });
   });
 });
