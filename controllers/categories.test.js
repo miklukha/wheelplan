@@ -5,7 +5,7 @@ const {
   deleteById,
   updateById,
   updateRating,
-} = require('./categories'); // Replace with your actual file path
+} = require('./categories'); 
 const { Category } = require('../models/category');
 
 jest.mock('../models/category');

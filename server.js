@@ -7,7 +7,6 @@ mongoose.set('strictQuery', true); // ensure that only the fields that are speci
 
 mongoose
   .connect(DB_HOST, {
-    // remove the warning in console
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
